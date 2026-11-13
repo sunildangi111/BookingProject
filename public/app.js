@@ -492,7 +492,18 @@ function renderOffers() {
           <span>${offer.vehicle?.large_bags || '—'} large</span>
           <span>${offer.vehicle?.small_bags || '—'} small</span>
         </div>
-        <div class="offer-price"><span>Supplier price</span><strong>${formatInr(offer.price_inr)}</strong></div>
+        <div class="offer-price">
+          <span>Supplier price</span>
+          ${offer.previous_price_inr && offer.previous_price_inr !== offer.price_inr ? `
+            <div class="fare-update-box">
+              <span class="fare-updated-pill">⚡ Fare updated by supplier</span>
+              <div class="fare-comparison">
+                <span class="fare-previous"><del>${formatInr(offer.previous_price_inr)}</del></span>
+                <strong class="fare-current">${formatInr(offer.price_inr)}</strong>
+              </div>
+            </div>
+          ` : `<strong>${formatInr(offer.price_inr)}</strong>`}
+        </div>
         ${open ? `<div class="offer-actions">
           <button class="button danger small" data-action="reject-offer" data-offer-id="${escapeHtml(offer.offer_id)}">Reject</button>
           <button class="button primary small" data-action="book-offer" data-offer-id="${escapeHtml(offer.offer_id)}">Book car</button>
@@ -665,13 +676,54 @@ function renderSupplierOffers(offers) {
     nodes.supplierOffers.innerHTML = '<div class="empty-state compact">No offers sent yet.</div>';
     return;
   }
-  nodes.supplierOffers.innerHTML = offers.slice(0, 12).map((offer) => `
-    <article class="history-card">
-      <div class="history-head"><h4>${escapeHtml(offer.vehicle_id)} · ${formatInr(offer.price_inr)}</h4><span class="status-chip ${statusClass(offer.status)}">${escapeHtml(offer.status.replaceAll('_', ' '))}</span></div>
-      <p>${escapeHtml(offer.request_id)} · ${escapeHtml(offer.offer_id)}</p>
-      <small>${escapeHtml(new Date(offer.created_at).toLocaleString('en-IN'))}</small>
-    </article>
-  `).join('');
+  nodes.supplierOffers.innerHTML = offers.slice(0, 12).map((offer) => {
+    const open = offer.status === 'OPEN';
+    return `
+      <article class="history-card">
+        <div class="history-head">
+          <h4>${escapeHtml(offer.vehicle_id)} · ${formatInr(offer.price_inr)}</h4>
+          <span class="status-chip ${statusClass(offer.status)}">${escapeHtml(offer.status.replaceAll('_', ' '))}</span>
+        </div>
+        ${offer.previous_price_inr && offer.previous_price_inr !== offer.price_inr ? `
+          <p style="margin: 4px 0; font-size: 11px; color: #047857; font-weight: 600;">
+            Previous fare: <del>${formatInr(offer.previous_price_inr)}</del> → <strong>${formatInr(offer.price_inr)}</strong>
+          </p>
+        ` : ''}
+        <p>${escapeHtml(offer.request_id)} · ${escapeHtml(offer.offer_id)}</p>
+        <small>${escapeHtml(new Date(offer.created_at).toLocaleString('en-IN'))}</small>
+        ${open ? `
+          <form class="update-fare-form" data-update-fare-id="${escapeHtml(offer.offer_id)}">
+            <input type="number" name="newPrice" value="${offer.price_inr}" min="1" step="1" required class="input-fare-small" placeholder="New fare">
+            <button type="submit" class="button secondary small">Update fare</button>
+          </form>
+        ` : ''}
+      </article>
+    `;
+  }).join('');
+}
+
+async function handleUpdateFare(event) {
+  const form = event.target.closest('[data-update-fare-id]');
+  if (!form) return;
+  event.preventDefault();
+  const offerId = form.dataset.updateFareId;
+  const button = form.querySelector('button[type="submit"]');
+  const input = form.querySelector('input[name="newPrice"]');
+  const newPrice = Number(input.value);
+
+  setLoading(button, true, 'Updating');
+  try {
+    const updated = await api(`/api/offers/${encodeURIComponent(offerId)}/price`, {
+      method: 'PATCH',
+      body: { price_inr: newPrice }
+    });
+    showToast('Fare updated', `Offer ${offerId} updated to ${formatInr(updated.price_inr)}.`);
+    await loadSupplierDashboard();
+  } catch (error) {
+    showToast(error.code || 'Could not update fare', error.message, 'error');
+  } finally {
+    setLoading(button, false);
+  }
 }
 
 async function submitSupplierOffer(event) {
@@ -694,7 +746,11 @@ async function submitSupplierOffer(event) {
         price_inr: formData.get('priceInr')
       }
     });
-    showToast('Offer sent', `${result.vehicle_id} was offered at ${formatInr(result.price_inr)}.`);
+    const isUpdate = result.previous_price_inr && result.previous_price_inr !== result.price_inr;
+    const message = isUpdate
+      ? `Fare updated for ${result.vehicle_id}: was ${formatInr(result.previous_price_inr)}, now ${formatInr(result.price_inr)}.`
+      : `${result.vehicle_id} was offered at ${formatInr(result.price_inr)}.`;
+    showToast(isUpdate ? 'Fare updated' : 'Offer sent', message);
     await loadSupplierDashboard();
   } catch (error) {
     errorBox.textContent = error.message;
@@ -852,15 +908,55 @@ function bindEvents() {
   nodes.supplierSelect.addEventListener('change', loadSupplierDashboard);
   nodes.refreshSupplierButton.addEventListener('click', loadSupplierDashboard);
   nodes.supplierRequests.addEventListener('submit', submitSupplierOffer);
+  nodes.supplierOffers.addEventListener('submit', handleUpdateFare);
   nodes.supplierChanges.addEventListener('click', decideSupplierChange);
   nodes.lookupForm.addEventListener('submit', lookupBooking);
   nodes.bookingResult.addEventListener('submit', submitBookingChange);
+}
+
+let autoRefreshTimer = null;
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(async () => {
+    try {
+      const travelerPanel = document.querySelector('[data-view-panel="traveler"]');
+      if (travelerPanel && !travelerPanel.hidden && appState.currentRequestId && !nodes.travelerWorkspace.hidden) {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        const isEditing = document.activeElement && nodes.travelerWorkspace.contains(document.activeElement) && (activeTag === 'INPUT' || activeTag === 'SELECT');
+        if (!isEditing) {
+          const offerResult = await api(`/api/ride-requests/${encodeURIComponent(appState.currentRequestId)}/offers`);
+          if (offerResult && Array.isArray(offerResult.offers)) {
+            const currentJson = JSON.stringify(appState.offers);
+            const newJson = JSON.stringify(offerResult.offers);
+            if (currentJson !== newJson) {
+              appState.offers = offerResult.offers;
+              renderOffers();
+            }
+          }
+        }
+      }
+
+      const supplierPanel = document.querySelector('[data-view-panel="supplier"]');
+      if (supplierPanel && !supplierPanel.hidden && appState.currentSupplierId) {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        const isEditing = document.activeElement && supplierPanel.contains(document.activeElement) && (activeTag === 'INPUT' || activeTag === 'SELECT');
+        if (!isEditing) {
+          const dashboard = await api(`/api/suppliers/${encodeURIComponent(appState.currentSupplierId)}/dashboard`);
+          if (dashboard) {
+            renderSupplierDashboard(dashboard);
+          }
+        }
+      }
+    } catch (_) {}
+  }, 3000);
 }
 
 async function initialize() {
   bindEvents();
   renderChildAgeFields();
   renderSupplierEmpty();
+  startAutoRefresh();
   try {
     await Promise.all([checkHealth(), loadCatalog()]);
     if (appState.currentRequestId) {

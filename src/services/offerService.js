@@ -84,11 +84,19 @@ function createOffer(requestId, body) {
       && offer.status === 'OPEN'
     ));
     if (duplicate) {
-      throw conflict(
-        'DUPLICATE_OFFER',
-        `${vehicleId} already has an open offer for ${requestId}.`,
-        { offer_id: duplicate.offer_id }
-      );
+      if (duplicate.price_inr === price) {
+        throw conflict(
+          'DUPLICATE_OFFER',
+          `${vehicleId} already has an open offer for ${requestId} at ₹${price}.`,
+          { offer_id: duplicate.offer_id }
+        );
+      }
+      const now = new Date().toISOString();
+      duplicate.previous_price_inr = duplicate.price_inr;
+      duplicate.price_inr = price;
+      duplicate.price_updated_at = now;
+      duplicate.updated_at = now;
+      return duplicate;
     }
 
     const now = new Date().toISOString();
@@ -97,6 +105,7 @@ function createOffer(requestId, body) {
       request_id: requestId,
       company_id: companyId,
       vehicle_id: vehicleId,
+      previous_price_inr: null,
       price_inr: price,
       status: 'OPEN',
       created_at: now,
@@ -107,6 +116,47 @@ function createOffer(requestId, body) {
   });
 
   return enrichOffer(created);
+}
+
+function updateOfferPrice(offerId, body) {
+  const price = wholeMoney(
+    body.price_inr !== undefined ? body.price_inr : body.priceInr,
+    'Updated price'
+  );
+
+  const updated = stateRepository.mutate((state) => {
+    const offer = state.offers.find((entry) => entry.offer_id === offerId);
+    if (!offer) {
+      throw notFound('OFFER_NOT_FOUND', `Offer ${offerId} was not found.`, { offer_id: offerId });
+    }
+
+    if (offer.status !== 'OPEN') {
+      throw conflict(
+        'OFFER_NOT_OPEN',
+        `Offer ${offerId} is ${offer.status} and its price cannot be changed.`,
+        { offer_id: offerId, status: offer.status }
+      );
+    }
+
+    const request = getRequestFromState(state, offer.request_id);
+    const company = catalogRepository.getCompany(offer.company_id);
+    const vehicle = catalogRepository.getVehicle(offer.company_id, offer.vehicle_id);
+
+    const selection = checkSpecificVehicle(request, company, vehicle, state);
+    const priceFailure = priceRangeFailure(price, selection.context.route);
+    if (priceFailure) {
+      throw badRequest(priceFailure.code, priceFailure.message, priceFailure.details);
+    }
+
+    const now = new Date().toISOString();
+    offer.previous_price_inr = offer.price_inr;
+    offer.price_inr = price;
+    offer.price_updated_at = now;
+    offer.updated_at = now;
+    return offer;
+  });
+
+  return enrichOffer(updated);
 }
 
 function listRequestOffers(requestId) {
@@ -158,6 +208,7 @@ function rejectOffer(offerId) {
 module.exports = {
   enrichOffer,
   createOffer,
+  updateOfferPrice,
   listRequestOffers,
   listSupplierOffers,
   rejectOffer

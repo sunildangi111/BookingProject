@@ -332,6 +332,16 @@ input::placeholder { color: var(--slate-400); }
 .offer-price { margin: 17px 0; padding-top: 14px; border-top: 1px solid var(--slate-200); }
 .offer-price span { color: var(--slate-500); font-size: 10px; text-transform: uppercase; }
 .offer-price strong { display: block; font-size: 26px; letter-spacing: -.03em; }
+.fare-update-box { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.fare-updated-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; font-size: 10px; font-weight: 800; color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0; border-radius: 6px; width: fit-content; text-transform: uppercase; letter-spacing: .03em; }
+.fare-comparison { display: flex; align-items: baseline; gap: 10px; margin-top: 3px; }
+.fare-previous { font-size: 14px; color: var(--slate-400); text-decoration: line-through; font-weight: 600; }
+.fare-current { font-size: 26px; font-weight: 900; color: var(--blue-700); letter-spacing: -.03em; }
+.update-fare-form { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--slate-200); }
+.input-fare-small { width: 95px !important; min-height: 32px !important; padding: 4px 8px !important; font-size: 13px !important; border: 1px solid var(--slate-300) !important; border-radius: 6px !important; }
+.auto-refresh-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; font-size: 11px; color: var(--slate-500); background: var(--slate-100); border-radius: 999px; margin-left: 8px; }
+.live-pulse { width: 7px; height: 7px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse-ring { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
 .offer-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
 .empty-state { padding: 30px 20px; color: var(--slate-500); border: 1px dashed var(--slate-300); border-radius: 13px; background: rgba(255,255,255,.58); text-align: center; }
 .empty-state strong { display: block; margin-bottom: 4px; color: var(--slate-700); }

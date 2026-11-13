@@ -236,7 +236,10 @@
             <span class="section-kicker">Live request</span>
             <h2 id="workspaceTitle">Request</h2>
           </div>
-          <button class="button secondary small" id="refreshOffersButton" type="button">Refresh offers</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="auto-refresh-pill"><span class="live-pulse"></span> Auto-refresh</span>
+            <button class="button secondary small" id="refreshOffersButton" type="button">Refresh offers</button>
+          </div>
         </div>
 
         <div class="request-overview" id="requestSummary"></div>
@@ -281,7 +284,10 @@
           <select id="supplierSelect">
             <option value="">Loading suppliers…</option>
           </select>
-          <button class="button secondary small" type="button" id="refreshSupplierButton">Refresh</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="auto-refresh-pill"><span class="live-pulse"></span> Auto-refresh</span>
+            <button class="button secondary small" type="button" id="refreshSupplierButton">Refresh</button>
+          </div>
         </div>
       </div>
 

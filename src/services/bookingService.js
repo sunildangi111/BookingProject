@@ -82,6 +82,7 @@ function createBooking(offerId) {
         drive_minutes: selection.context.route.drive_minutes,
         distance_km: selection.context.route.distance_km
       },
+      previous_price_inr: offer.previous_price_inr || null,
       price_inr: offer.price_inr,
       status: 'BOOKED',
       created_at: now,

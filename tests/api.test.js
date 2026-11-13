@@ -95,6 +95,13 @@ test('complete Menon request, offer, booking, and change workflow', async () => 
   assert.equal(createdOffer.status, 201);
   const offerId = createdOffer.payload.data.offer_id;
 
+  const updatedOffer = await api('PATCH', `/api/offers/${offerId}/price`, {
+    price_inr: 11900
+  });
+  assert.equal(updatedOffer.status, 200);
+  assert.equal(updatedOffer.payload.data.previous_price_inr, 12500);
+  assert.equal(updatedOffer.payload.data.price_inr, 11900);
+
   const booked = await api('POST', `/api/offers/${offerId}/book`);
   assert.equal(booked.status, 201);
   const reference = booked.payload.data.booking.booking_reference;
