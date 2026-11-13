@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Allow example env file
+!.env.example
+
+# Runtime & storage
+storage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and temp files
+.DS_Store
+Thumbs.db
+coverage/
+*.tmp
