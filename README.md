@@ -125,9 +125,23 @@ Failures use stable codes:
 }
 ```
 
-## Persistence
+## Persistence & MongoDB Atlas
 
-`storage/state.json` is created automatically. Every mutation writes a temporary file and renames it, reducing the chance of a half-written state file. Supplied open requests are seeded exactly once. Supplied booked rides remain read-only baseline busy intervals.
+The application supports both **MongoDB Atlas** and atomic local file state:
+
+1. **MongoDB Atlas (Primary):**
+   - Create or open your MongoDB Atlas cluster.
+   - Copy `.env.example` to `.env` (or configure your environment variables):
+     ```env
+     MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/arrivalride?retryWrites=true&w=majority
+     MONGODB_DB=arrivalride
+     ```
+   - On startup, the application connects to MongoDB Atlas, synchronizes live collections (`ride_requests`, `offers`, `bookings`, `change_requests`, and `metadata`), and automatically creates unique indexes.
+   - If the Atlas database is newly created, it automatically seeds initial open requests.
+   - `npm run reset` clears and re-seeds the MongoDB Atlas collections.
+
+2. **Local Storage Fallback:**
+   - If `MONGODB_URI` is not set, the app seamlessly runs on atomic `storage/state.json` writes without requiring MongoDB.
 
 Booking references are strings, so a value such as `0048172635` keeps its leading zeroes.
 

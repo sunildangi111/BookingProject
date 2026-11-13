@@ -22,6 +22,7 @@ app.get('/api/health', (req, res) => {
     data: {
       status: 'ok',
       service: 'ArrivalRide API',
+      database: stateRepository.isMongoConnected() ? 'mongodb-atlas' : 'local-storage',
       catalog: catalogRepository.getStats(),
       state: {
         ride_requests: state.ride_requests.length,
