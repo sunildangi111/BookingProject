@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ArrivalRide — fair, flight-aware airport taxi offers.">
+  <title>ArrivalRide · Airport taxi offers</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="ArrivalRide home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <path d="M8 31.5h32l-3.6-10.1a5 5 0 0 0-4.7-3.3H16.3a5 5 0 0 0-4.7 3.3L8 31.5Z" fill="currentColor" opacity=".25"/>
+          <path d="M10 31h28M15 31l2.5-8h13L33 31M14 35.5h.01M34 35.5h.01" fill="none" stroke="currentColor" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="m23.8 5.5 3.2 7.2 7.6 1.1-5.5 5.2 1.3 7.4-6.6-3.5-6.7 3.5 1.3-7.4-5.5-5.2 7.6-1.1 3.3-7.2Z" fill="#fff" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </span>
+      <span>
+        <strong>ArrivalRide</strong>
+        <small>Airport taxi offers</small>
+      </span>
+    </a>
+
+    <nav class="role-nav" aria-label="Application areas">
+      <button class="nav-button active" type="button" data-view="traveler">
+        <span>Traveler</span>
+      </button>
+      <button class="nav-button" type="button" data-view="supplier">
+        <span>Supplier</span>
+      </button>
+      <button class="nav-button" type="button" data-view="booking">
+        <span>Booking lookup</span>
+      </button>
+    </nav>
+
+    <div class="system-status" id="appStatus" title="Backend status">
+      <span class="status-dot"></span>
+      <span>Connecting</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Flight-aware · Fair-price · Capacity checked</span>
+        <h1>Your airport ride, matched properly.</h1>
+        <p>Post what you need and what you want to pay. Local taxi teams respond with cars that fit your travelers, bags, route, and landing time.</p>
+        <div class="hero-trust">
+          <span><b>60 min</b> arrival buffer</span>
+          <span><b>100%</b> backend validated</span>
+          <span><b>10-digit</b> booking reference</span>
+        </div>
+      </div>
+      <div class="route-visual" aria-hidden="true">
+        <div class="route-airport">
+          <span class="route-icon">✈</span>
+          <strong>Arrival</strong>
+          <small>Flight lands</small>
+        </div>
+        <div class="route-line"><span></span></div>
+        <div class="route-car">
+          <span class="route-icon">●</span>
+          <strong>Pickup</strong>
+          <small>Car verified</small>
+        </div>
+        <div class="route-line"><span></span></div>
+        <div class="route-hotel">
+          <span class="route-icon">▰</span>
+          <strong>Hotel</strong>
+          <small>Area matched</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="view active" id="travelerView" data-view-panel="traveler">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">Traveler flow</span>
+          <h2>Post a ride request</h2>
+          <p>The route and price range come directly from the supplied catalog.</p>
+        </div>
+        <button class="button secondary" type="button" id="loadMenonButton">Load Menon demo</button>
+      </div>
+
+      <div class="traveler-layout">
+        <form class="panel form-panel" id="travelerForm" novalidate>
+          <div class="panel-heading">
+            <span class="step-badge">1</span>
+            <div>
+              <h3>Trip details</h3>
+              <p>Choose the arriving flight and destination hotel.</p>
+            </div>
+          </div>
+
+          <div class="field-grid two-columns">
+            <label class="field full-width">
+              <span>Traveler name <em>optional</em></span>
+              <input id="travelerName" name="travelerName" type="text" maxlength="100" placeholder="e.g. Menon family" autocomplete="name">
+            </label>
+
+            <label class="field full-width">
+              <span>Arrival flight <b>*</b></span>
+              <select id="flightSelect" name="flightId" required>
+                <option value="">Loading flights…</option>
+              </select>
+              <small id="flightHint">Only arrivals in Japan and the UAE are shown.</small>
+            </label>
+
+            <label class="field full-width">
+              <span>Hotel <b>*</b></span>
+              <select id="hotelSelect" name="hotelId" required disabled>
+                <option value="">Choose a flight first</option>
+              </select>
+              <small>Hotels are filtered to cities served by the arrival airport.</small>
+            </label>
+          </div>
+
+          <div class="quote-card empty" id="quoteCard" aria-live="polite">
+            <div class="quote-icon">₹</div>
+            <div>
+              <span class="quote-label">Suggested route price</span>
+              <strong id="quoteRange">Choose a flight and hotel</strong>
+              <small id="quoteRoute">We will verify airport, city, and area.</small>
+            </div>
+          </div>
+
+          <div class="divider"><span>Travel party</span></div>
+
+          <div class="field-grid three-columns">
+            <label class="field">
+              <span>Adults <b>*</b></span>
+              <input id="adults" name="adults" type="number" min="1" step="1" value="1" required>
+            </label>
+            <label class="field">
+              <span>Children</span>
+              <input id="childCount" name="childCount" type="number" min="0" max="8" step="1" value="0">
+            </label>
+            <label class="field">
+              <span>Preferred car</span>
+              <select id="carType" name="carType">
+                <option value="">Any type</option>
+                <option value="HATCHBACK">Hatchback</option>
+                <option value="SEDAN">Sedan</option>
+                <option value="SUV">SUV</option>
+                <option value="BUS">Bus</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="child-ages" id="childAgesContainer" aria-live="polite"></div>
+
+          <div class="field-grid two-columns">
+            <label class="field">
+              <span>Large bags <b>*</b></span>
+              <input id="largeBags" name="largeBags" type="number" min="0" step="1" value="1" required>
+            </label>
+            <label class="field">
+              <span>Small bags <b>*</b></span>
+              <input id="smallBags" name="smallBags" type="number" min="0" step="1" value="1" required>
+            </label>
+          </div>
+
+          <div class="divider"><span>Pickup & price</span></div>
+
+          <div class="field-grid two-columns">
+            <label class="field">
+              <span>Pickup time <em>optional</em></span>
+              <input id="pickup" name="pickup" type="datetime-local" step="60">
+              <small>Blank uses landing + 60 minutes.</small>
+            </label>
+            <label class="field">
+              <span>Your price (INR) <b>*</b></span>
+              <div class="money-input"><span>₹</span><input id="travelerPrice" name="priceInr" type="number" min="1" step="1" placeholder="12,000" required></div>
+              <small>Must stay inside the route range.</small>
+            </label>
+          </div>
+
+          <div class="inline-error" id="travelerFormError" hidden></div>
+          <button class="button primary wide" type="submit" id="postRequestButton">
+            <span>Post ride request</span><span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <aside class="traveler-side">
+          <div class="panel tracker-panel">
+            <div class="panel-heading compact">
+              <span class="step-badge muted">2</span>
+              <div>
+                <h3>Track a request</h3>
+                <p>Open offers using a request ID.</p>
+              </div>
+            </div>
+            <form class="track-form" id="trackRequestForm">
+              <input id="trackRequestId" type="text" placeholder="REQ-1001" aria-label="Ride request ID">
+              <button class="button dark" type="submit">Track</button>
+            </form>
+          </div>
+
+          <div class="panel safety-panel">
+            <span class="safety-icon">✓</span>
+            <div>
+              <h3>Every offer is checked</h3>
+              <p>Airport coverage, hotel area, service hours, seats, both bag sizes, and car availability are validated by the backend.</p>
+            </div>
+          </div>
+
+          <div class="panel rule-list">
+            <h3>How pickup works</h3>
+            <ol>
+              <li><span>1</span><p>We read the flight's local landing time.</p></li>
+              <li><span>2</span><p>We add a required 60-minute arrival buffer.</p></li>
+              <li><span>3</span><p>The car remains busy for the drive to the hotel and back.</p></li>
+            </ol>
+          </div>
+        </aside>
+      </div>
+
+      <section class="workspace" id="travelerWorkspace" hidden>
+        <div class="workspace-header">
+          <div>
+            <span class="section-kicker">Live request</span>
+            <h2 id="workspaceTitle">Request</h2>
+          </div>
+          <button class="button secondary small" id="refreshOffersButton" type="button">Refresh offers</button>
+        </div>
+
+        <div class="request-overview" id="requestSummary"></div>
+        <div class="eligibility-box" id="eligibilitySummary"></div>
+
+        <div class="offers-heading">
+          <div>
+            <h3>Taxi offers</h3>
+            <p>Book the car you prefer—not necessarily the cheapest.</p>
+          </div>
+          <div class="offer-tools">
+            <label>Type
+              <select id="offerTypeFilter">
+                <option value="">All cars</option>
+                <option value="HATCHBACK">Hatchback</option>
+                <option value="SEDAN">Sedan</option>
+                <option value="SUV">SUV</option>
+                <option value="BUS">Bus</option>
+              </select>
+            </label>
+            <label>Sort
+              <select id="offerSort">
+                <option value="price">Lowest price</option>
+                <option value="rating">Supplier rating</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="offer-list" id="offersList"></div>
+      </section>
+    </section>
+
+    <section class="view" id="supplierView" data-view-panel="supplier" hidden>
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">Supplier flow</span>
+          <h2>Serve requests your fleet can handle</h2>
+          <p>The dashboard hides requests outside your airport, area, hours, capacity, or availability.</p>
+        </div>
+        <div class="supplier-picker">
+          <label for="supplierSelect">Acting as</label>
+          <select id="supplierSelect"><option value="">Loading suppliers…</option></select>
+          <button class="button secondary small" type="button" id="refreshSupplierButton">Refresh</button>
+        </div>
+      </div>
+
+      <div class="supplier-identity panel" id="supplierIdentity"></div>
+      <div class="metric-row" id="supplierStats"></div>
+
+      <div class="supplier-columns">
+        <section>
+          <div class="subsection-heading">
+            <div><h3>Serviceable requests</h3><p>Every card has at least one currently eligible vehicle.</p></div>
+          </div>
+          <div class="supplier-request-list" id="supplierRequests"></div>
+        </section>
+
+        <aside>
+          <div class="subsection-heading">
+            <div><h3>Pending changes</h3><p>Accept only when the same car remains valid and free.</p></div>
+          </div>
+          <div class="change-list" id="supplierChanges"></div>
+
+          <div class="subsection-heading spaced">
+            <div><h3>Your offer history</h3><p>Open, booked, rejected, and not chosen.</p></div>
+          </div>
+          <div class="history-list" id="supplierOffers"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="view" id="bookingView" data-view-panel="booking" hidden>
+      <div class="lookup-shell">
+        <div class="lookup-copy">
+          <span class="section-kicker light">Persistent booking lookup</span>
+          <h2>Open your ride with ten digits.</h2>
+          <p>Your confirmed flight, hotel, supplier, car, pickup, and price remain available after a page refresh or backend restart.</p>
+          <form class="lookup-form" id="lookupForm">
+            <input id="bookingReferenceInput" type="text" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit booking number" aria-label="Booking number" required>
+            <button class="button accent" type="submit">Open booking</button>
+          </form>
+          <div class="inline-error light-error" id="lookupError" hidden></div>
+        </div>
+        <div class="booking-ticket-placeholder" id="lookupPlaceholder">
+          <span class="ticket-plane">✈</span>
+          <strong>ArrivalRide</strong>
+          <p>Your ride ticket will appear here.</p>
+          <small>BOOKING · SUMMARY · CHANGE</small>
+        </div>
+      </div>
+      <div class="booking-result" id="bookingResult" hidden></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand">
+      <span class="brand-mark mini" aria-hidden="true">AR</span>
+      <span><strong>ArrivalRide</strong><small>Built for HackCellence</small></span>
+    </div>
+    <p>Catalog-backed decisions. Persistent marketplace state. No external AI or travel API.</p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span id="toastIcon">✓</span>
+    <div><strong id="toastTitle">Done</strong><p id="toastMessage"></p></div>
+  </div>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
